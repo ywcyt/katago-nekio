@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lizziezy LLM 控制中心</title>
+  <style>
+    :root {
+      --bg: #eef4ff;
+      --panel: #ffffff;
+      --line: #d6e1f5;
+      --ink: #12213a;
+      --muted: #5e6f8f;
+      --accent: #0f62fe;
+      --accent2: #0f766e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 16% 12%, #f8fbff 0%, #eef4ff 48%),
+        linear-gradient(135deg, #e8f2ff, #f2f7ff);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+    .app {
+      width: min(980px, 96vw);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 22px 50px rgba(26, 58, 122, 0.16);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 76vh;
+    }
+    .head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, #ffffff, #f3f7ff);
+    }
+    .head h1 { margin: 0; font-size: 17px; }
+    .small { font-size: 12px; color: var(--muted); }
+    .chat {
+      padding: 12px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+    .msg {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #dce6f7;
+      background: #f7faff;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .msg.user {
+      background: #e8f1ff;
+      border-color: #cfe1ff;
+    }
+    .msg.assistant {
+      background: #f6fbff;
+      border-color: #d6e8f7;
+    }
+    .tool {
+      margin-top: 4px;
+      color: #234;
+      font-size: 12px;
+      opacity: .9;
+    }
+    .composer {
+      padding: 12px;
+      display: flex;
+      gap: 8px;
+      background: #fcfeff;
+    }
+    input {
+      flex: 1;
+      border: 1px solid #ccdaf5;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+      outline: none;
+    }
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--accent);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.secondary { background: var(--accent2); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="head">
+      <h1>Lizziezy 大模型控制中心</h1>
+      <div class="small" id="status">连接中...</div>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="composer">
+      <input id="input" placeholder="可以聊天，也可以下指令，例如：你好 / 切到大师难度并把每手设成6秒" />
+      <button id="send">发送</button>
+      <button id="sendHttp" class="secondary">HTTP执行</button>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const sendHttpBtn = document.getElementById('sendHttp');
+    const statusEl = document.getElementById('status');
+
+    function addMsg(role, text, meta) {
+      const div = document.createElement('div');
+      div.className = `msg ${role}`;
+      div.textContent = text;
+      if (meta) {
+        const m = document.createElement('div');
+        m.className = 'tool';
+        m.textContent = meta;
+        div.appendChild(m);
+      }
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    let ws;
+    function connectWS() {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      ws = new WebSocket(`${proto}://${location.host}/ws/chat`);
+      ws.onopen = () => {
+        statusEl.textContent = 'WebSocket 已连接';
+      };
+      ws.onclose = () => {
+        statusEl.textContent = '连接已断开，3秒后重连';
+        setTimeout(connectWS, 3000);
+      };
+      ws.onmessage = (ev) => {
+        const data = JSON.parse(ev.data);
+        const role = data.type === 'user' ? 'user' : 'assistant';
+        const meta = data.action ? `action=${data.action} source=${data.source || 'n/a'}` : '';
+        addMsg(role, data.text || '', meta);
+      };
+    }
+
+    async function sendHTTP(text) {
+      addMsg('user', text);
+      const res = await fetch('/api/chat-command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json();
+      addMsg('assistant', data.message || JSON.stringify(data), `action=${data.action} ok=${data.ok}`);
+    }
+
+    function sendWS(text) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        addMsg('assistant', 'WebSocket 尚未连接，建议用 HTTP 执行。');
+        return;
+      }
+      ws.send(JSON.stringify({ text }));
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const t = input.value.trim();
+      if (!t) return;
+      input.value = '';
+      sendWS(t);
+    });
+
+    sendHttpBtn.addEventListener('click', async () => {
+      const t = input.value.trim();
+      if (!t) return;
+      input.value = '';
+      await sendHTTP(t);
+    });
+
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' && !ev.shiftKey) {
+        ev.preventDefault();
+        sendBtn.click();
+      }
+    });
+
+    connectWS();
+  </script>
+</body>
+</html>

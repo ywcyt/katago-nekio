@@ -1,0 +1,17 @@
+{
+  "white-percent": 33,
+  "location-x": 50,
+  "last-time-total-visits": -1,
+  "location-y": 50,
+  "auto-minimize": true,
+  "keep-sync-interval-millseconds": 200,
+  "last-time-both-sync": false,
+  "last-time-fitst-visits": -1,
+  "white-offset": 96,
+  "black-offset": 96,
+  "play-ponder": true,
+  "black-percent": 33,
+  "gray-offset": 50,
+  "last-time-total-time": -1,
+  "verify-placed-move": true
+}

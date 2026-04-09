@@ -1,0 +1,48 @@
+# Python caches and local env
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+
+# Large runtime/binary assets (do not commit to source repo)
+*.exe
+*.dll
+*.pyd
+*.pak
+*.bin
+*.bin.gz
+*.dat
+*.jar
+*.so
+*.dylib
+*.class
+*.jsa
+
+# App runtime and model artifacts
+lizziezy_base/jre/
+lizziezy_base/jcef-bundle/
+lizziezy_base/katago_tensorRT/
+lizziezy_base/weights/
+lizziezy_base/KataGoData/
+lizziezy_base/katago_opencl/KataGoData/
+lizziezy_base/katago_contribute/
+lizziezy_base/persist/
+lizziezy_base/save/
+lizziezy_base/gtp_logs/
+lizziezy_base/exports/
+
+# Local generated files
+*.log
+*.tmp
+*.cache
+
+# Non-source documents/media/debug symbols
+*.pdf
+*.docx
+*.rtf
+*.png
+*.jpg
+*.jpeg
+*.pdb
