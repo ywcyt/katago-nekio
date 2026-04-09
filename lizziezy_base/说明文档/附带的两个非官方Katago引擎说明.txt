@@ -1,2 +1,0 @@
-1.CPU-AVX2-非官方: 运行速度略快于官方编译的版本,此引擎来自于https://github.com/MAOmao000/LeelaGUI/releases
-2.TensorRT非官方: 采用缓存整个模型的编译方法编译,第一次加载时间较长,第二次开始加载速度明显快于官方编译版本

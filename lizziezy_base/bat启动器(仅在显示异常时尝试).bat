@@ -1,1 +1,0 @@
-start jre\java17\bin\javaw.exe -jar -Dsun.java2d.opengl=true lizzie-yzy2.5.3-shaded.jar
